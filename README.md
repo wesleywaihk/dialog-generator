@@ -1,9 +1,11 @@
 # dialogue-generator
 
 How to Use This Reader
-Generate Dialogue: Use an AI tool (like ChatGPT, Gemini, etc.) to generate a dialogue script. Specify the language and the speakers.
-Export to JSON: Ask the AI to export the generated dialogue script as a **JSON file** that strictly follows this **Swagger/OpenAPI schema**: View Required Schema (schema.yaml)
+Generate Dialogue: Prepare your own dialogue.
+Export to JSON: Export the generated dialogue script as a **JSON file** that strictly follows this **Swagger/OpenAPI schema**: View Required Schema (schema.yaml)
 The JSON structure must include "language_code" and an array named "dialogue" with "speaker" and "text" for each line.
+
+Sample JSON: English | Chinese | Japanese
 
 Upload: Click the **"Upload JSON Dialogue File"** button above and select your generated JSON file.
 Read: Use the **"Read All Dialogue"** button or click on individual lines to hear the conversation using your browser's native Text-to-Speech (TTS) voices.
