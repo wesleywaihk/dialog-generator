@@ -2,19 +2,19 @@
   "language_code": "zh-HK",
   "dialogue": [
     {
-      "speaker": "陳",
+      "speaker": "陳先生",
       "text": "你好！多謝你今日嚟面試。我係負責面試嘅陳先生。"
     },
     {
-      "speaker": "王",
+      "speaker": "王大文",
       "text": "陳先生你好！多謝你俾時間我。我叫王大文。"
     },
     {
-      "speaker": "陳",
+      "speaker": "陳先生",
       "text": "唔使客氣。請問你喺香港做開啲咩工作？"
     },
     {
-      "speaker": "王",
+      "speaker": "王大文",
       "text": "我之前喺一間酒店做文職工作。"
     }
   ]
