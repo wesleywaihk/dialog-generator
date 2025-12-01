@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Dialogue TTS Data Schema
   version: 1.0.0
-  description: 用於 Web Speech API 文本轉語音 (TTS) 的對話資料結構。
+  description: Data structure for Text-to-Speech (TTS) dialogue using the Web Speech API.
 
 components:
   schemas:
@@ -14,11 +14,11 @@ components:
       properties:
         speaker:
           type: string
-          description: 發言人的名字或角色。 (用於嘗試匹配特定聲音)
+          description: The name or role of the speaker. (Used to attempt matching specific voices)
           example: "Alice"
         text:
           type: string
-          description: 要被朗讀的對話內容。
+          description: The dialogue content to be spoken aloud.
           example: "Hello, how are you today?"
 
     DialogueData:
@@ -29,12 +29,12 @@ components:
       properties:
         language_code:
           type: string
-          description: 整個對話使用的 BCP 47 語言標籤 (例如：zh-TW, en-US, ja-JP)。
+          description: The BCP 47 language tag used for the entire dialogue (e.g., zh-TW, en-US, ja-JP).
           example: "en-US"
         dialogue:
           type: array
-          description: 依序排列的對話行。
+          description: An ordered array of dialogue lines.
           items:
             $ref: "#/components/schemas/DialogueLine"
 
-paths: {} # 由於這是一個資料結構而非 API，paths 留空
+paths: {} # This is a data structure schema, not an API definition.
