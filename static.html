@@ -5,7 +5,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Static JSON Dialogue TTS Reader</title>
+    <title>🗣️ Dialogue TTS Reader</title>
 
     <style>
       body {
@@ -69,7 +69,7 @@
   </head>
 
   <body>
-    <h1>🗣️ Static JSON Dialogue TTS Reader</h1>
+    <h1>🗣️ Dialogue TTS rateSlider</h1>
 
     <div class="controls">
       <div class="loading-info">
@@ -119,17 +119,18 @@
       const stopBtn = document.getElementById("stopBtn");
       const logDiv = document.getElementById("log");
 
-      const STATIC_DATA_FILE = "static-data.json"; // Define the static file path
+      const STATIC_DATA_FILE = "static-data.json";
 
       let dialogueData = null;
       let voices = [];
       let currentUtterance = null;
       let dialogueIndex = 0;
-      let speakerVoiceMap = {}; // NEW: Map to store the assigned voice for each unique speaker // --- Voice Initialization ---
+      let speakerVoiceMap = {}; // FIX: New global flag to track if "Read All" mode is active
+      let isReadingAll = false; // --- Voice Initialization ---
 
       function populateVoices() {
         voices = synth.getVoices();
-        logMessage(`Found ${voices.length} system voices.`); // NEW: Initialize speaker map if data is already loaded
+        logMessage(`Found ${voices.length} system voices.`);
         if (dialogueData) {
           initializeVoicesForDialogue();
         }
@@ -148,13 +149,13 @@
           `<span style="color:${color};">[${time}] ${message}</span><br>` +
           logDiv.innerHTML;
         logDiv.scrollTop = 0;
-      } // NEW: Function to map unique speakers to distinct available voices
+      }
 
       function initializeVoicesForDialogue() {
-        speakerVoiceMap = {}; // Clear map
+        speakerVoiceMap = {};
         if (!dialogueData || voices.length === 0) return;
 
-        const targetLang = dialogueData.language_code; // Filter voices that match the target language
+        const targetLang = dialogueData.language_code;
         const langVoices = voices.filter((v) => v.lang.startsWith(targetLang));
 
         if (langVoices.length === 0) {
@@ -163,14 +164,13 @@
             true
           );
           return;
-        } // Get unique speakers from the dialogue
+        }
 
         const uniqueSpeakers = [
           ...new Set(dialogueData.dialogue.map((line) => line.speaker)),
         ];
 
         uniqueSpeakers.forEach((speaker, index) => {
-          // Assign voices in a round-robin manner (index % length)
           const voiceIndex = index % langVoices.length;
           const selectedVoice = langVoices[voiceIndex];
           speakerVoiceMap[speaker] = selectedVoice;
@@ -181,10 +181,9 @@
       }
 
       function getVoice(lang, speakerName) {
-        // FIX: Use the pre-mapped voice for consistent speaker assignment
         if (speakerVoiceMap[speakerName]) {
           return speakerVoiceMap[speakerName];
-        } // Fallback: Match by language only (Original Fallback)
+        }
 
         return voices.find((v) => v.lang.startsWith(lang));
       } // --- Core TTS Function ---
@@ -232,13 +231,19 @@
         stopBtn.disabled = false;
 
         utterance.onend = () => {
-          logMessage(`Speech ended: ${text.substring(0, 30)}...`); // Clear highlight only if not transitioning immediately in readAll mode
-          if (!isAllMode || dialogueIndex >= dialogueData.dialogue.length) {
+          logMessage(`Speech ended: ${text.substring(0, 30)}...`); // Only proceed to the next line if in 'Read All' mode AND isReadingAll is still true
+
+          if (
+            !isAllMode ||
+            dialogueIndex >= dialogueData.dialogue.length ||
+            !isReadingAll
+          ) {
             document
               .querySelectorAll(".current-speaking")
               .forEach((el) => el.classList.remove("current-speaking"));
             stopBtn.disabled = true;
             readAllBtn.disabled = !dialogueData || false;
+            isReadingAll = false; // Ensure flag is reset after natural finish
           }
           currentUtterance = null;
           callback();
@@ -256,18 +261,23 @@
       function handleLineClick(event) {
         const lineElement = event.currentTarget;
         const index = parseInt(lineElement.dataset.index);
-        const line = dialogueData.dialogue[index]; // Stop continuous reading
+        const line = dialogueData.dialogue[index]; // If running "read all," cancel it first
 
-        if (synth.speaking && dialogueIndex < dialogueData.dialogue.length) {
+        if (isReadingAll) {
+          stopReading();
+        } else if (synth.speaking) {
           synth.cancel();
         }
+
+        // Ensure continuous mode is off for single line click
+        isReadingAll = false;
 
         speak(
           line.text,
           dialogueData.language_code,
           line.speaker,
           lineElement,
-          false
+          false // Not in All Mode
         );
       } // --- Read All Dialogue ---
 
@@ -276,16 +286,25 @@
 
         synth.cancel(); // Stop any previous speech
         dialogueIndex = 0;
-        readAllBtn.disabled = true;
+        readAllBtn.disabled = true; // FIX: Set flag to indicate continuous reading is active
+        isReadingAll = true;
         logMessage("Starting continuous reading...");
         readNextLine();
       }
 
       function readNextLine() {
-        if (!dialogueData || dialogueIndex >= dialogueData.dialogue.length) {
-          logMessage("All dialogue lines finished.");
+        // FIX: Check if reading was stopped externally or if we are at the end
+        if (
+          !isReadingAll ||
+          !dialogueData ||
+          dialogueIndex >= dialogueData.dialogue.length
+        ) {
+          if (isReadingAll) {
+            logMessage("All dialogue lines finished.");
+          } // Reset state regardless of how it ended
+          isReadingAll = false;
           stopBtn.disabled = true;
-          readAllBtn.disabled = false;
+          readAllBtn.disabled = !dialogueData || false;
           document
             .querySelectorAll(".current-speaking")
             .forEach((el) => el.classList.remove("current-speaking"));
@@ -304,7 +323,7 @@
           lineElement,
           true,
           () => {
-            // This callback runs after onend or onerror
+            // This callback runs after onend or onerror, but only if isReadingAll was true when speak started.
             dialogueIndex++;
             readNextLine();
           }
@@ -312,6 +331,8 @@
       } // --- Stop Function ---
 
       function stopReading() {
+        // FIX: Set flag to false BEFORE canceling speech
+        isReadingAll = false;
         synth.cancel();
         document
           .querySelectorAll(".current-speaking")
@@ -345,7 +366,7 @@
           if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
           }
-          const data = await response.json(); // Basic validation
+          const data = await response.json();
 
           if (!data.language_code || !Array.isArray(data.dialogue)) {
             throw new Error(
@@ -354,7 +375,7 @@
           }
 
           dialogueData = data;
-          renderDialogue(dialogueData); // NEW: Map speakers to voices immediately after data load, if voices are available
+          renderDialogue(dialogueData);
 
           if (voices.length > 0) {
             initializeVoicesForDialogue();
@@ -370,19 +391,19 @@
       } // --- Event Listeners ---
 
       rateSlider.addEventListener("input", () => {
-        rateValueSpan.textContent = rateSlider.value; // Update rate instantly if speaking
+        rateValueSpan.textContent = rateSlider.value; // If currently speaking, update the rate immediately
         if (currentUtterance && !synth.paused) {
           currentUtterance.rate = parseFloat(rateSlider.value);
         }
       });
 
       readAllBtn.addEventListener("click", readAllDialogue);
-      stopBtn.addEventListener("click", stopReading); // Ensure initial state and load data on DOMContentLoaded
+      stopBtn.addEventListener("click", stopReading);
 
       document.addEventListener("DOMContentLoaded", () => {
         readAllBtn.disabled = true;
         stopBtn.disabled = true;
-        loadStaticData(); // Start loading the static file immediately
+        loadStaticData();
       });
     </script>
   </body>

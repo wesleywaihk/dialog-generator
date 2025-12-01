@@ -242,12 +242,13 @@
       let voices = [];
       let currentUtterance = null;
       let dialogueIndex = 0;
-      let speakerVoiceMap = {}; // FIX 1: Map to store the assigned voice for each unique speaker
+      let speakerVoiceMap = {}; // FIX 1: New global flag to track if "Read All" mode is active
+      let isReadingAll = false;
       const howToUseHtml = document.querySelector(".how-to-use").outerHTML; // --- Voice Initialization ---
 
       function populateVoices() {
         voices = synth.getVoices();
-        logMessage(`Found ${voices.length} system voices.`); // FIX 3: Initialize speaker map if data is already loaded
+        logMessage(`Found ${voices.length} system voices.`);
         if (dialogueData) {
           initializeVoicesForDialogue();
         }
@@ -266,12 +267,12 @@
           `<span style="color:${color};">[${time}] ${message}</span><br>` +
           logDiv.innerHTML;
         logDiv.scrollTop = 0;
-      } // FIX 2: Function to map unique speakers to distinct available voices
+      }
       function initializeVoicesForDialogue() {
-        speakerVoiceMap = {}; // Clear map
+        speakerVoiceMap = {};
         if (!dialogueData || voices.length === 0) return;
 
-        const targetLang = dialogueData.language_code; // Filter voices that match the target language
+        const targetLang = dialogueData.language_code;
         const langVoices = voices.filter((v) => v.lang.startsWith(targetLang));
 
         if (langVoices.length === 0) {
@@ -280,14 +281,13 @@
             true
           );
           return;
-        } // Get unique speakers from the dialogue
+        }
 
         const uniqueSpeakers = [
           ...new Set(dialogueData.dialogue.map((line) => line.speaker)),
         ];
 
         uniqueSpeakers.forEach((speaker, index) => {
-          // Assign voices in a round-robin manner (index % length)
           const voiceIndex = index % langVoices.length;
           const selectedVoice = langVoices[voiceIndex];
           speakerVoiceMap[speaker] = selectedVoice;
@@ -295,13 +295,12 @@
             `Mapped speaker **${speaker}** to voice: **${selectedVoice.name}**`
           );
         });
-      } // FIX 4: Updated getVoice to prioritize the reliable speakerVoiceMap
+      }
 
       function getVoice(lang, speakerName) {
-        // 1. Use the pre-mapped voice for consistent speaker assignment
         if (speakerVoiceMap[speakerName]) {
           return speakerVoiceMap[speakerName];
-        } // 2. Fallback: Match by language only (Original Fallback)
+        }
 
         return voices.find((v) => v.lang.startsWith(lang));
       } // --- Core TTS Function ---
@@ -392,14 +391,23 @@
 
         synth.cancel();
         dialogueIndex = 0;
-        readAllBtn.disabled = true;
+        readAllBtn.disabled = true; // FIX 2a: Set flag to indicate continuous reading is active
+        isReadingAll = true;
         logMessage("Starting continuous reading...");
         readNextLine();
       }
 
       function readNextLine() {
-        if (!dialogueData || dialogueIndex >= dialogueData.dialogue.length) {
-          logMessage("All dialogue lines finished.");
+        // FIX 3: Check if reading was stopped externally
+        if (
+          !isReadingAll ||
+          !dialogueData ||
+          dialogueIndex >= dialogueData.dialogue.length
+        ) {
+          if (isReadingAll) {
+            logMessage("All dialogue lines finished.");
+          } // Reset state regardless of how it ended
+          isReadingAll = false;
           stopBtn.disabled = true;
           readAllBtn.disabled = false;
           document
@@ -427,6 +435,8 @@
       } // --- Stop Function ---
 
       function stopReading() {
+        // FIX 2b: Set flag to false BEFORE canceling speech
+        isReadingAll = false;
         synth.cancel();
         document
           .querySelectorAll(".current-speaking")
@@ -453,7 +463,7 @@
             const data = JSON.parse(storedData);
             if (data.language_code && Array.isArray(data.dialogue)) {
               dialogueData = data;
-              renderDialogue(dialogueData); // Initialize voices after data restore
+              renderDialogue(dialogueData);
               if (voices.length > 0) {
                 initializeVoicesForDialogue();
               }
@@ -499,14 +509,14 @@
               );
             }
             dialogueData = data;
-            renderDialogue(dialogueData); // FIX 5: Initialize the voice map after loading and parsing a new file
+            renderDialogue(dialogueData);
 
             if (voices.length > 0) {
               initializeVoicesForDialogue();
             }
 
             readAllBtn.disabled = false;
-            logMessage("JSON file loaded successfully."); // Save the newly loaded data
+            logMessage("JSON file loaded successfully.");
 
             saveDataToLocalStorage(dialogueData);
           } catch (err) {
