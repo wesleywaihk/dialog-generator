@@ -17,6 +17,7 @@
         #log { margin-top: 20px; padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd; max-height: 150px; overflow-y: auto; font-size: 0.9em; }
         .how-to-use { background-color: #e6f7ff; border-color: #b3d9ff; }
         .how-to-use ol li { margin-bottom: 10px; }
+        .download-links { margin-top: 15px; font-size: 0.95em; }
     </style>
 </head>
 <body>
@@ -26,6 +27,13 @@
     <div class="controls">
         <label for="fileInput">Upload JSON Dialogue File:</label>
         <input type="file" id="fileInput" accept="application/json">
+        
+        <div class="download-links">
+            🔗 **Resources:**
+            <a href="sample-data.json" download="sample-data.json">Download Sample JSON</a>
+            |
+            <a href="https://wesleywaihk.github.io/dialogue-generator/schema.yaml" target="_blank">View Required Schema (.yaml)</a>
+        </div>
     </div>
 
     <div class="dialogue-controls">
@@ -55,7 +63,7 @@
                     <p>The JSON structure must include <code>"language_code"</code> and an array named <code>"dialogue"</code> with <code>"speaker"</code> and <code>"text"</code> for each line.</p>
                 </li>
                 <li>
-                    <strong>Upload:</strong> Click the **"Upload JSON Dialogue File"** button above and select your generated JSON file.
+                    <strong>Upload:</strong> Click the **"Upload JSON Dialogue File"** button above and select your generated JSON file (or use the provided sample file).
                 </li>
                 <li>
                     <strong>Read:</strong> Use the **"Read All Dialogue"** button or click on individual lines to hear the conversation using your browser's native Text-to-Speech (TTS) voices.
